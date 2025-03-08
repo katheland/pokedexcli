@@ -4,9 +4,7 @@ import (
 	"strings"
 	"bufio"
 	"os"
-	"net/http"
-	"io"
-	"encoding/json"
+	"internal/pokeapi"
 )
 
 // The structure of a valid command
@@ -24,7 +22,6 @@ type Config struct {
 
 // A map of valid commands that the program recognizes, and what to do with them
 var validCommands map[string]cliCommand
-//var mapConfig Config
 
 // but it's important to initialize the map here, to avoid an initialization loop
 func init() {
@@ -48,13 +45,13 @@ func init() {
 		},
 		"map": {
 			name: "map",
-			description: "Lists areas",
+			description: "Lists the next page of areas",
 			callback: commandMap,
 			config: &mapConfig,
 		},
 		"mapb": {
 			name: "mapb",
-			description: "Lists areas",
+			description: "Lists the previous page of areas",
 			callback: commandMapB,
 			config: &mapConfig,
 		},
@@ -103,55 +100,31 @@ func commandHelp() error {
 	return nil
 }
 
-type Location struct {
-	Count    int    `json:"count"`
-	Next     string `json:"next"`
-	Previous *string    `json:"previous"`
-	Results  []struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
-	} `json:"results"`
-}
-
-// print a page of 20 locations
-func mapFunction(url *string) error {
-	if url == nil {
-		fmt.Println("you're on the first page")
-		return nil
-	}
-
-	res, err := http.Get(*url)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	jsonData, err := io.ReadAll(res.Body)
-	if err != nil {
-		return err
-	}
-
-	var locations Location
-	if err = json.Unmarshal(jsonData, &locations); err != nil {
-		return err
-	}
-
-	for _, loc := range locations.Results {
-		fmt.Println(loc.Name)
-	}
-
-	validCommands["map"].config.next = locations.Next
-	validCommands["map"].config.previous = locations.Previous
-	
-	return nil
-}
-
 // print the next page of locations
 func commandMap() error {
-	return mapFunction(&validCommands["map"].config.next)
+	next, previous, err := pokeapi.MapFunction(&validCommands["map"].config.next)
+	if err != nil {
+		return err
+	}
+
+	validCommands["map"].config.next = next
+	validCommands["map"].config.previous = previous
+	return nil
 }
 
 // print the previous page of locations
 func commandMapB() error {
-	return mapFunction(validCommands["map"].config.previous)
+	if validCommands["map"].config.previous == nil {
+		fmt.Println("you're on the first page")
+		return nil
+	}
+
+	next, previous, err := pokeapi.MapFunction(validCommands["map"].config.previous)
+	if err != nil {
+		return err
+	}
+
+	validCommands["map"].config.next = next
+	validCommands["map"].config.previous = previous
+	return nil
 }
