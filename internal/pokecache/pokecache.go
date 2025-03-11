@@ -1,17 +1,17 @@
 package pokecache
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
 
-var Cache struct {
+// the structure of the cache
+type Cache struct {
 	entries map[string]cacheEntry
 	mu sync.Mutex
 	interval time.Duration
 }
-var cacheEntry struct {
+type cacheEntry struct {
 	createdAt time.Time
 	val []byte
 }
@@ -20,7 +20,7 @@ var cacheEntry struct {
 func NewCache(i time.Duration) Cache {
 	c := Cache{
 		entries: make(map[string]cacheEntry),
-		interval: i
+		interval: i,
 	}
 	go c.reapLoop()
 	return c
@@ -58,7 +58,7 @@ func (c *Cache) reapLoop() {
 		case <-ticker.C:
 			c.mu.Lock()
 			for k, v := range c.entries {
-				if time.Now() - v.createdAt > c.interval {
+				if time.Now().Sub(v.createdAt) > c.interval {
 					delete(c.entries, k)
 				}
 			}

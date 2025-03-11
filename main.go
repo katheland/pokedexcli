@@ -93,7 +93,7 @@ func commandExit() error {
 // print the help text
 func commandHelp() error {
 	fmt.Println("Welcome to the Pokedex!")
-	fmt.Println("Usage:\n")
+	fmt.Println("Usage:")
 	for _, val := range validCommands {
 		fmt.Println(fmt.Sprintf("%s: %s", val.name, val.description))
 	}
