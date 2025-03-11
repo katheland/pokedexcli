@@ -18,10 +18,12 @@ var cacheEntry struct {
 
 // create a new cache
 func NewCache(i time.Duration) Cache {
-	return Cache{
+	c := Cache{
 		entries: make(map[string]cacheEntry),
 		interval: i
 	}
+	go c.reapLoop()
+	return c
 }
 
 // add an entry to the cache
