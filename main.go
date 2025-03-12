@@ -5,13 +5,14 @@ import (
 	"bufio"
 	"os"
 	"internal/pokeapi"
+	"errors"
 )
 
 // The structure of a valid command
 type cliCommand struct {
 	name string
 	description string
-	callback func() error
+	callback func([]string) error
 	config *Config
 }
 
@@ -55,6 +56,12 @@ func init() {
 			callback: commandMapB,
 			config: &mapConfig,
 		},
+		"explore": {
+			name: "explore <area_name>",
+			description: "Lists the Pokemon found at the given location",
+			callback: commandExplore,
+			config: nil,
+		},
 	}
 }
 
@@ -65,10 +72,13 @@ func main() {
 		fmt.Print("Pokedex >")
 		scanner.Scan()
 		input := cleanInput(scanner.Text())
-		//fmt.Println("Your command was:", input[0])
 		command, exists := validCommands[input[0]]
 		if exists {
-			err := command.callback()
+			params := []string{}
+			if len(input) > 1 {
+				params = input[1:]
+			}
+			err := command.callback(params)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -84,14 +94,14 @@ func cleanInput(text string) []string {
 }
 
 // exit the program
-func commandExit() error {
+func commandExit(params []string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
 // print the help text
-func commandHelp() error {
+func commandHelp(params []string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	for _, val := range validCommands {
@@ -101,7 +111,7 @@ func commandHelp() error {
 }
 
 // print the next page of locations
-func commandMap() error {
+func commandMap(params []string) error {
 	next, previous, err := pokeapi.MapFunction(&validCommands["map"].config.next)
 	if err != nil {
 		return err
@@ -113,7 +123,7 @@ func commandMap() error {
 }
 
 // print the previous page of locations
-func commandMapB() error {
+func commandMapB(params []string) error {
 	if validCommands["map"].config.previous == nil {
 		fmt.Println("you're on the first page")
 		return nil
@@ -127,4 +137,12 @@ func commandMapB() error {
 	validCommands["map"].config.next = next
 	validCommands["map"].config.previous = previous
 	return nil
+}
+
+// print the pokemon found at a given location
+func commandExplore(params []string) error {
+	if len(params) == 0 {
+		return errors.New("explore requires a location parameter")
+	}
+	return pokeapi.ExploreFunction(params[0])
 }
