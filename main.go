@@ -21,7 +21,7 @@ type Config struct {
 }
 
 // A map of Pokemon the user has caught (to be expanded upon)
-var pokedex map[string]bool
+var pokedex map[string]pokeapi.Pokemon
 
 // A map of valid commands that the program recognizes, and what to do with them
 var validCommands map[string]cliCommand
@@ -70,9 +70,15 @@ func init() {
 			callback: commandCatch,
 			config: nil,
 		},
+		"inspect": {
+			name: "inspect <pokemon>",
+			description: "Prints stats about a given caught Pokemon species",
+			callback: commandInspect,
+			config: nil,
+		},
 	}
 
-	pokedex = map[string]bool{}
+	pokedex = map[string]pokeapi.Pokemon{}
 }
 
 // main
@@ -165,9 +171,41 @@ func commandCatch(params []string) error {
 	p, b, err := pokeapi.CatchFunction(params[0])
 	if b {
 		fmt.Println(p + " was caught!")
-		pokedex[p] = true
+		// if it's not registered to the Pokedex yet, register it
+		if _, ok := pokedex[p]; ok != true {
+			fmt.Println("New pokedex data is being registered for " + p)
+			data, err := pokeapi.GetSpeciesData(p)
+			if err != nil {
+				return err
+			}
+			pokedex[p] = data
+		}
 	} else {
 		fmt.Println(p + " escaped!")
 	}
 	return err
+}
+
+// print the stats of the registered species
+func commandInspect(params []string) error {
+	if len(params) == 0 {
+		return errors.New("inspect requires a pokemon parameter")
+	}
+	data, ok := pokedex[params[0]]
+	if !ok {
+		return errors.New("you have not caught that pokemon")
+	}
+	fmt.Println(fmt.Sprintf("Name: %s", data.Name))
+	fmt.Println(fmt.Sprintf("Height: %d", data.Height))
+	fmt.Println(fmt.Sprintf("Weight: %d", data.Weight))
+	fmt.Println("Stats:")
+	for _, stat := range data.Stats {
+		fmt.Println(fmt.Sprintf("  -%s: %d", stat.Stat.Name, stat.BaseStat))
+	}
+	fmt.Println("Types:")
+	for _, pokeType := range data.Types {
+		fmt.Println(fmt.Sprintf("  -%s", pokeType.Type.Name))
+	}
+
+	return nil
 }

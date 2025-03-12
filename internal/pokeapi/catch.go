@@ -16,6 +16,26 @@ type CaptureRate struct {
 	Name                 string `json:"name"`
 }
 
+// structure of the pokemon species data
+// (why is this separated, and why isn't catch rate here...)
+type Pokemon struct {
+	Height    int `json:"height"`
+	ID                     int    `json:"id"`
+	Name          string `json:"name"`
+	Stats []struct {
+		BaseStat int `json:"base_stat"`
+		Stat     struct {
+			Name string `json:"name"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Type struct {
+			Name string `json:"name"`
+		} `json:"type"`
+	} `json:"types"`
+	Weight int `json:"weight"`
+}
+
 // initialize a cache
 var catchCache pokecache.Cache
 func init() {
@@ -56,4 +76,28 @@ func CatchFunction(species string) (string, bool, error) {
 	caught := attempt <= catchRate.CaptureRate
 	
 	return catchRate.Name, caught, nil
+}
+
+// get species data when we're registering a new one to the pokedex
+func GetSpeciesData(species string) (Pokemon, error) {
+	fullUrl := "https://pokeapi.co/api/v2/pokemon/" + species
+
+	// not caching this because the pokedex itself will act as a cache
+	res, err := http.Get(fullUrl)
+	if err != nil {
+		return Pokemon{}, err
+	}
+	defer res.Body.Close()
+
+	jsonData, err := io.ReadAll(res.Body)
+	if err != nil {
+		return Pokemon{}, err
+	}
+
+	var pokemon Pokemon
+	if err := json.Unmarshal(jsonData, &pokemon); err != nil {
+		return Pokemon{}, err
+	}
+
+	return pokemon, nil
 }
