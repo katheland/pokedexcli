@@ -76,6 +76,12 @@ func init() {
 			callback: commandInspect,
 			config: nil,
 		},
+		"pokedex": {
+			name: "pokedex",
+			description: "Prints the species caught in the user's Pokedex",
+			callback: commandPokedex,
+			config: nil,
+		},
 	}
 
 	pokedex = map[string]pokeapi.Pokemon{}
@@ -204,8 +210,18 @@ func commandInspect(params []string) error {
 	}
 	fmt.Println("Types:")
 	for _, pokeType := range data.Types {
-		fmt.Println(fmt.Sprintf("  -%s", pokeType.Type.Name))
+		fmt.Println(fmt.Sprintf(" - %s", pokeType.Type.Name))
 	}
 
+	return nil
+}
+
+// prints the list of pokemon registered in the user's pokedex
+// FOR LATER: add sorting options, like numerical or alphabetical
+func commandPokedex(params []string) error {
+	fmt.Println("Your Pokedex:")
+	for mon, _ := range pokedex {
+		fmt.Println(" - " + mon)
+	}
 	return nil
 }
