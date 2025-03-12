@@ -26,7 +26,7 @@ func init() {
 func CatchFunction(species string) (string, bool, error) {
 	fullUrl := "https://pokeapi.co/api/v2/pokemon-species/" + species
 
-	jsonData, ok := exploreCache.Get(fullUrl)
+	jsonData, ok := catchCache.Get(fullUrl)
 	if !ok { // it's not in the cache so we're calling the API
 		res, err := http.Get(fullUrl)
 		if err != nil {
@@ -39,7 +39,7 @@ func CatchFunction(species string) (string, bool, error) {
 			return "", false, err
 		}
 
-		mapCache.Add(fullUrl, jsonData)
+		catchCache.Add(fullUrl, jsonData)
 	}
 
 	// the guided project says to use the pokemon's base experience
