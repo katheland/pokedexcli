@@ -41,7 +41,7 @@ func ExploreFunction(url string) error {
 			return err
 		}
 
-		mapCache.Add(url, jsonData)
+		mapCache.Add(fullUrl, jsonData)
 	}
 	
 	var encounters Encounters

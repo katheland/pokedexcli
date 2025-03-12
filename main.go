@@ -15,11 +15,13 @@ type cliCommand struct {
 	callback func([]string) error
 	config *Config
 }
-
 type Config struct {
 	next string
 	previous *string
 }
+
+// A map of Pokemon the user has caught (to be expanded upon)
+var pokedex map[string]bool
 
 // A map of valid commands that the program recognizes, and what to do with them
 var validCommands map[string]cliCommand
@@ -62,7 +64,15 @@ func init() {
 			callback: commandExplore,
 			config: nil,
 		},
+		"catch": {
+			name: "catch <pokemon>",
+			description: "Attempts to catch a Pokemon of the given species",
+			callback: commandCatch,
+			config: nil,
+		},
 	}
+
+	pokedex = map[string]bool{}
 }
 
 // main
@@ -145,4 +155,19 @@ func commandExplore(params []string) error {
 		return errors.New("explore requires a location parameter")
 	}
 	return pokeapi.ExploreFunction(params[0])
+}
+
+// attempt to catch the given species of pokemon
+func commandCatch(params []string) error {
+	if len(params) == 0 {
+		return errors.New("catch requires a pokemon parameter")
+	}
+	p, b, err := pokeapi.CatchFunction(params[0])
+	if b {
+		fmt.Println(p + " was caught!")
+		pokedex[p] = true
+	} else {
+		fmt.Println(p + " escaped!")
+	}
+	return err
 }
